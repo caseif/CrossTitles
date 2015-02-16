@@ -1,0 +1,143 @@
+// Apply Gradle plugins
+plugins {
+	id 'java'
+	id 'maven'
+	id 'eclipse'
+	id 'idea'
+
+	id 'com.github.hierynomus.license' version '0.11.0'
+}
+
+apply plugin: 'checkstyle'
+
+defaultTasks 'clean', 'licenseFormat', 'build'
+
+// Project information
+group = 'net.caseif.crosstitles'
+version = '0.1.0-SNAPSHOT'
+
+// Extended project information
+ext.projectName = 'crosstitles'
+ext.description = 'A Minecraft version-independent title API for Bukkit 1.8+.'
+ext.inceptionYear = '2015'
+ext.packaging = 'jar'
+ext.versionSuffix = version.contains('SNAPSHOT') ? (
+		(
+				System.getenv('GIT_COMMIT') ? ('-git(' +
+						(System.getenv('GIT_BRANCH').contains('/') ? System.getenv('GIT_BRANCH').split('/')[1] : System.getenv('GIT_BRANCH')) + '-' +
+						System.getenv('GIT_COMMIT').substring(0, 7) + ')') : ''
+		) +
+				(System.getenv('BUILD_NUMBER') ? '-jnks' + System.getenv('BUILD_NUMBER') : '')
+) : ''
+
+sourceCompatibility = 1.6
+targetCompatibility = 1.6
+
+ext {
+	bukkit = 'org.bukkit:bukkit:1.8-R0.1-SNAPSHOT'
+}
+
+// Project repositories
+repositories {
+	mavenCentral()
+	maven { url 'http://hub.spigotmc.org/nexus/content/groups/public/' }
+}
+
+configurations {
+	deployerJars
+}
+
+// Project dependencies
+dependencies {
+	compile bukkit
+
+	deployerJars 'org.apache.maven.wagon:wagon-ssh:2.8'
+}
+
+// Read source files using UTF-8
+tasks.withType(JavaCompile) {
+	options.encoding = 'UTF-8'
+}
+
+processResources {
+	from 'crosstitles-LICENSE'
+}
+
+// License header formatting
+license {
+	header file('crosstitles-LICENSE')
+	sourceSets = project.sourceSets
+	ignoreFailures false
+	strictCheck true
+	mapping {
+		java = 'SLASHSTAR_STYLE'
+	}
+}
+
+// check code style
+checkstyle {
+	configProperties = [
+			"name"		: project.name,
+			"year"		: project.inceptionYear
+	]
+	configFile = file("etc/checkstyle.xml")
+}
+
+tasks.withType(Checkstyle){
+	exclude '**/Metrics.java'
+	exclude '**/*.properties'
+	exclude '**/*.yml'
+}
+
+task sourceJar(type: Jar) {
+	from sourceSets.main.java
+	from sourceSets.main.resources
+	classifier = "sources"
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+	from javadoc.destinationDir
+	classifier = 'javadoc'
+}
+
+artifacts {
+	archives jar
+	archives sourceJar
+	archives javadocJar
+}
+
+uploadArchives {
+	repositories.mavenDeployer {
+		setUniqueVersion(true)
+		configuration = configurations.deployerJars
+		if (project.hasProperty("mavenRepo")) {
+			repository(url: project.property("mavenRepo")) {
+				authentication(userName: project.property("mavenUser"), password: project.property("mavenPass"))
+			}
+		}
+
+		pom {
+			groupId = project.group
+			version = project.version
+			artifactId = project.ext.projectName
+			project {
+				packaging 'jar'
+				description project.ext.description
+
+				scm {
+					url 'https://github.com/caseif/CrossTitles'
+					connection 'scm:git:git://github.com/caseif/CrossTitles.git'
+					developerConnection 'scm:git:git@github.com:caseif/CrossTitles.git'
+				}
+
+				licenses {
+					license {
+						name 'MIT license'
+						url 'http://opensource.org/licenses/MIT'
+						distribution 'repo'
+					}
+				}
+			}
+		}
+	}
+}
