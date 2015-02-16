@@ -57,7 +57,7 @@ public class TitleUtil {
 	private static Object enumTitleAction_title;
 
 	static {
-		String[] array = Bukkit.getServer().getClass().getPackage().getName().replace(".", ",").split(",");
+		String[] array = Bukkit.getServer().getClass().getPackage().getName().split("\\.");
 		VERSION_STRING = array.length == 4 ? array[3] + "." : "";
 		boolean titleSupport = true;
 		try {
