@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2015 Maxim Roncacé
+ * Copyright (c) 2013-2015, Maxim Roncacé <mproncace@lapis.blue>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,11 +27,11 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-
 /**
  * An API for sending titles to players.
  */
@@ -109,13 +109,13 @@ public class TitleUtil {
 		if (TITLE_SUPPORT) {
 			String json = "{text:\"" + title + "\"";
 			if (color != null) { // append color info
-				json += ",color:\"" + color.name() + "\"";
+				json += ",color:\"" + color.name().toLowerCase() + "\"";
 			}
 			json += "}";
 			try {
 				Object packet = packetPlayOutTitle_init_LL.newInstance(
 						// the type of information contained by the packet
-						sub ? enumTitleAction_title : enumTitleAction_subtitle,
+						sub ? enumTitleAction_subtitle : enumTitleAction_title,
 						// the serialized JSON to send via the packet
 						chatSerializer_a.invoke(null, json)
 				);
@@ -196,8 +196,8 @@ public class TitleUtil {
 	 * @param subColor the color of the subtitle
 	 */
 	public static void sendTitle(Player player,
-	                                 String title, ChatColor titleColor,
-	                                 String subtitle, ChatColor subColor) {
+	                             String title, ChatColor titleColor,
+	                             String subtitle, ChatColor subColor) {
 		sendSubtitle(player, subtitle, subColor);
 		sendTitle(player, title, titleColor);
 	}

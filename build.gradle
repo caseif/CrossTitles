@@ -14,7 +14,7 @@ defaultTasks 'clean', 'licenseFormat', 'build'
 
 // Project information
 group = 'net.caseif.crosstitles'
-version = '0.1.0-SNAPSHOT'
+version = '0.1.0'
 
 // Extended project information
 ext.projectName = 'crosstitles'
@@ -81,12 +81,6 @@ checkstyle {
 			"year"		: project.inceptionYear
 	]
 	configFile = file("etc/checkstyle.xml")
-}
-
-tasks.withType(Checkstyle){
-	exclude '**/Metrics.java'
-	exclude '**/*.properties'
-	exclude '**/*.yml'
 }
 
 task sourceJar(type: Jar) {
