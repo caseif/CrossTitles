@@ -40,9 +40,6 @@ public class TitleUtil {
 	private static final String VERSION_STRING;
 	private static final boolean TITLE_SUPPORT;
 
-	// classes
-	private static Class<?> iChatBaseComponent;
-
 	// fields
 	private static Field entityPlayer_playerConnection;
 
