@@ -154,7 +154,7 @@ public class TitleUtil {
 	}
 
 	/**
-	 * Sets the timing for the current title if one is displayinmg; otherwise
+	 * Sets the timing for the current title if one is displaying; otherwise
 	 * sets the timing for the next title sent.
 	 * @param player the player to set title timing for
 	 * @param fadeIn the time in ticks the title should fade in over (default
@@ -223,7 +223,7 @@ public class TitleUtil {
 	}
 
 	/**
-	 * Sends a title and subtitle with the given timing to a player.
+	 * Sends a title with the given timing to a player.
 	 * @param player the player to send the title to
 	 * @param title the content of the title
 	 * @param titleColor the color of the title
