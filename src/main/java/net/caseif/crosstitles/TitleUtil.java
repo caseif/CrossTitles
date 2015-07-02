@@ -37,6 +37,8 @@ import java.lang.reflect.Method;
  */
 public class TitleUtil {
 
+	private static Throwable throwable;
+
 	private static final String VERSION_STRING;
 	private static final boolean TITLE_SUPPORT;
 
@@ -63,7 +65,14 @@ public class TitleUtil {
 		try {
 			// for specifying title type
 			@SuppressWarnings("unchecked")
-			Class<? extends Enum> enumTitleAction = (Class<? extends Enum>)getNmsClass("EnumTitleAction");
+			Class<? extends Enum> enumTitleAction;
+			try {
+				// this changed to an inner class at some point during 1.8
+				enumTitleAction = (Class<? extends Enum>)getNmsClass("PacketPlayOutTitle$EnumTitleAction");
+			} catch (ClassNotFoundException ex) {
+				// older 1.8 builds/1.7
+				enumTitleAction = (Class<? extends Enum>)getNmsClass("EnumTitleAction");
+			}
 			enumTitleAction_title = Enum.valueOf(enumTitleAction, "TITLE");
 			enumTitleAction_subtitle = Enum.valueOf(enumTitleAction, "SUBTITLE");
 
@@ -74,7 +83,14 @@ public class TitleUtil {
 			packetPlayOutTitle_init_III = packetPlayOutTitle.getConstructor(int.class, int.class, int.class);
 
 			// for getting an IChatBaseComponent from a String
-			chatSerializer_a = getNmsClass("ChatSerializer").getDeclaredMethod("a", String.class);
+			try {
+				// changed at the same time as EnumTitleAction
+				chatSerializer_a =
+						getNmsClass("IChatBaseComponent$ChatSerializer").getDeclaredMethod("a", String.class);
+			} catch (ClassNotFoundException ex) {
+				// older 1.8 builds/1.7
+				chatSerializer_a = getNmsClass("ChatSerializer").getDeclaredMethod("a", String.class);
+			}
 
 			// for sending packets
 			craftPlayer_getHandle = getCraftClass("entity.CraftPlayer").getMethod("getHandle");
@@ -83,12 +99,15 @@ public class TitleUtil {
 					getNmsClass("PlayerConnection").getMethod("sendPacket", getNmsClass("Packet"));
 		}
 		catch (ClassNotFoundException ex) {
+			throwable = ex;
 			titleSupport = false;
 		}
 		catch (NoSuchFieldException ex) {
+			throwable = ex;
 			titleSupport = false;
 		}
 		catch (NoSuchMethodException ex) {
+			throwable = ex;
 			titleSupport = false;
 		}
 		TITLE_SUPPORT = titleSupport;
@@ -100,6 +119,16 @@ public class TitleUtil {
 	 */
 	public static boolean areTitlesSupported() {
 		return TITLE_SUPPORT;
+	}
+
+	/**
+	 * Returns the {@link Throwable} preventing title support, if applicable.
+	 *
+	 * @return The {@link Throwable} preventing title support, or
+	 * <code>null</code> if titles are supported
+	 */
+	public Throwable getException() {
+		return throwable;
 	}
 
 	private static void sendTitle(Player player, String title, ChatColor color, boolean sub) {
