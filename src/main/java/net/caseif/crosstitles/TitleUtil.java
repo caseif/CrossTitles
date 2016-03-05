@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2015, Maxim Roncacé <caseif@lapis.blue>
+ * Copyright (c) 2015-2016, Max Roncace <me@caseif.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -98,15 +98,7 @@ public class TitleUtil {
 			playerConnection_sendPacket =
 					getNmsClass("PlayerConnection").getMethod("sendPacket", getNmsClass("Packet"));
 		}
-		catch (ClassNotFoundException ex) {
-			throwable = ex;
-			titleSupport = false;
-		}
-		catch (NoSuchFieldException ex) {
-			throwable = ex;
-			titleSupport = false;
-		}
-		catch (NoSuchMethodException ex) {
+		catch (ClassNotFoundException | NoSuchFieldException | NoSuchMethodException ex) {
 			throwable = ex;
 			titleSupport = false;
 		}
@@ -133,9 +125,9 @@ public class TitleUtil {
 
 	private static void sendTitle(Player player, String title, ChatColor color, boolean sub) {
 		if (TITLE_SUPPORT) {
-			String json = "{text:\"" + title + "\"";
+			String json = "{\"text\":\"" + title + "\"";
 			if (color != null) { // append color info
-				json += ",color:\"" + color.name().toLowerCase() + "\"";
+				json += ",\"color\":\"" + color.name().toLowerCase() + "\"";
 			}
 			json += "}";
 			try {
@@ -149,13 +141,7 @@ public class TitleUtil {
 				Object playerConnection = entityPlayer_playerConnection.get(vanillaPlayer);
 				playerConnection_sendPacket.invoke(playerConnection, packet);
 			}
-			catch (IllegalAccessException ex) {
-				ex.printStackTrace();
-			}
-			catch (InstantiationException ex) {
-				ex.printStackTrace();
-			}
-			catch (InvocationTargetException ex) {
+			catch (IllegalAccessException | InvocationTargetException | InstantiationException ex) {
 				ex.printStackTrace();
 			}
 		}
@@ -201,13 +187,7 @@ public class TitleUtil {
 				Object playerConnection = entityPlayer_playerConnection.get(vanillaPlayer);
 				playerConnection_sendPacket.invoke(playerConnection, packet);
 			}
-			catch (IllegalAccessException ex) {
-				ex.printStackTrace();
-			}
-			catch (InstantiationException ex) {
-				ex.printStackTrace();
-			}
-			catch (InvocationTargetException ex) {
+			catch (IllegalAccessException | InstantiationException | InvocationTargetException ex) {
 				ex.printStackTrace();
 			}
 		}
