@@ -1,11 +1,11 @@
 // Apply Gradle plugins
 plugins {
     id 'java'
-    id 'maven'
+    id 'maven-publish'
     id 'eclipse'
     id 'idea'
 
-    id 'com.github.hierynomus.license' version '0.11.0'
+    id 'org.cadixdev.licenser' version '0.6.1'
 }
 
 apply plugin: 'checkstyle'
@@ -21,14 +21,6 @@ ext.projectName = 'crosstitles'
 ext.description = 'A Minecraft version-independent title API for Bukkit 1.8+.'
 ext.inceptionYear = '2015'
 ext.packaging = 'jar'
-ext.versionSuffix = version.contains('SNAPSHOT') ? (
-        (
-                System.getenv('GIT_COMMIT') ? ('-git(' +
-                        (System.getenv('GIT_BRANCH').contains('/') ? System.getenv('GIT_BRANCH').split('/')[1] : System.getenv('GIT_BRANCH')) + '-' +
-                        System.getenv('GIT_COMMIT').substring(0, 7) + ')') : ''
-        ) +
-                (System.getenv('BUILD_NUMBER') ? '-jnks' + System.getenv('BUILD_NUMBER') : '')
-) : ''
 
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
@@ -49,7 +41,7 @@ configurations {
 
 // Project dependencies
 dependencies {
-    compile bukkit
+    implementation bukkit
 
     deployerJars 'org.apache.maven.wagon:wagon-ssh:2.8'
 }
@@ -65,13 +57,9 @@ processResources {
 
 // License header formatting
 license {
-    header file('crosstitles-LICENSE')
-    sourceSets = project.sourceSets
+    header = project.file('etc/HEADER.txt')
+    include '**/*.java'
     ignoreFailures false
-    strictCheck true
-    mapping {
-        java = 'SLASHSTAR_STYLE'
-    }
 }
 
 // check code style
@@ -100,38 +88,34 @@ artifacts {
     archives javadocJar
 }
 
-uploadArchives {
-    repositories.mavenDeployer {
-        setUniqueVersion(true)
-        configuration = configurations.deployerJars
-        if (project.hasProperty("mavenRepo")) {
-            repository(url: project.property("mavenRepo")) {
-                authentication(userName: project.property("mavenUser"), password: project.property("mavenPass"))
-            }
-        }
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
 
-        pom {
-            groupId = project.group
-            version = project.version
-            artifactId = project.ext.projectName
-            project {
-                packaging 'jar'
-                description project.ext.description
+            pom {
+                name = 'CrossTitles'
+                description = project.ext.description
+                url = 'http://github.com/caseif/CrossTitles'
 
                 scm {
-                    url 'https://github.com/caseif/CrossTitles'
-                    connection 'scm:git:git://github.com/caseif/CrossTitles.git'
-                    developerConnection 'scm:git:git@github.com:caseif/CrossTitles.git'
+                    url = 'https://github.com/caseif/CrossTitles'
+                    connection = 'scm:git:git://github.com/caseif/CrossTitles.git'
+                    developerConnection = 'scm:git:git@github.com:caseif/CrossTitles.git'
                 }
 
                 licenses {
                     license {
-                        name 'MIT license'
-                        url 'http://opensource.org/licenses/MIT'
-                        distribution 'repo'
+                        name = 'MIT'
+                        url = 'http://opensource.org/licenses/MIT'
+                        distribution = 'repo'
                     }
                 }
             }
         }
     }
+}
+
+wrapper {
+    gradleVersion = '7.4'
 }
