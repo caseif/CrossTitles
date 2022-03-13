@@ -42,6 +42,7 @@ public class TitleUtil {
 
     private static final String VERSION_STRING;
     private static final boolean TITLE_SUPPORT;
+    private static final boolean USING_BUKKIT_API;
 
     // fields
     private static Field entityPlayer_playerConnection;
@@ -51,6 +52,8 @@ public class TitleUtil {
     private static Constructor<?> packetPlayOutTitle_init_III;
 
     // methods
+    private static Method player_sendTitle_2;
+    private static Method player_sendTitle_5;
     private static Method chatSerializer_a;
     private static Method craftPlayer_getHandle;
     private static Method playerConnection_sendPacket;
@@ -62,7 +65,10 @@ public class TitleUtil {
     static {
         String[] array = Bukkit.getServer().getClass().getPackage().getName().split("\\.");
         VERSION_STRING = array.length == 4 ? array[3] + "." : "";
+
         boolean titleSupport = true;
+        boolean usingBukkit = false;
+
         try {
             // for specifying title type
             @SuppressWarnings("unchecked")
@@ -100,10 +106,20 @@ public class TitleUtil {
                     getNmsClass("PlayerConnection").getMethod("sendPacket", getNmsClass("Packet"));
         }
         catch (ClassNotFoundException | NoSuchFieldException | NoSuchMethodException ex) {
-            throwable = ex;
-            titleSupport = false;
+            // check if we can just fall back on the Bukkit API
+            try {
+                player_sendTitle_2 = Player.class.getMethod("sendTitle", String.class, String.class);
+                player_sendTitle_5 = Player.class.getMethod("sendTitle", String.class, String.class, int.class,
+                        int.class, int.class);
+                usingBukkit = true;
+            } catch (NoSuchMethodException ex2) {
+                throwable = ex;
+                titleSupport = false;
+            }
         }
+
         TITLE_SUPPORT = titleSupport;
+        USING_BUKKIT_API = usingBukkit;
     }
 
     /**
@@ -126,21 +142,28 @@ public class TitleUtil {
 
     private static void sendTitle(Player player, String title, ChatColor color, boolean sub) {
         if (TITLE_SUPPORT) {
-            String json = "{\"text\":\"" + title + "\"";
-            if (color != null) { // append color info
-                json += ",\"color\":\"" + color.name().toLowerCase() + "\"";
-            }
-            json += "}";
             try {
-                Object packet = packetPlayOutTitle_init_LL.newInstance(
-                        // the type of information contained by the packet
-                        sub ? enumTitleAction_subtitle : enumTitleAction_title,
-                        // the serialized JSON to send via the packet
-                        chatSerializer_a.invoke(null, json)
-                );
-                Object vanillaPlayer = craftPlayer_getHandle.invoke(player);
-                Object playerConnection = entityPlayer_playerConnection.get(vanillaPlayer);
-                playerConnection_sendPacket.invoke(playerConnection, packet);
+                if (USING_BUKKIT_API) {
+                    String mainTitle = sub ? null : color + title;
+                    String subtitle = sub ? color + title : null;
+                    player_sendTitle_2.invoke(player, mainTitle, subtitle);
+                } else {
+                    String json = "{\"text\":\"" + title + "\"";
+                    if (color != null) { // append color info
+                        json += ",\"color\":\"" + color.name().toLowerCase() + "\"";
+                    }
+                    json += "}";
+
+                    Object packet = packetPlayOutTitle_init_LL.newInstance(
+                            // the type of information contained by the packet
+                            sub ? enumTitleAction_subtitle : enumTitleAction_title,
+                            // the serialized JSON to send via the packet
+                            chatSerializer_a.invoke(null, json)
+                    );
+                    Object vanillaPlayer = craftPlayer_getHandle.invoke(player);
+                    Object playerConnection = entityPlayer_playerConnection.get(vanillaPlayer);
+                    playerConnection_sendPacket.invoke(playerConnection, packet);
+                }
             }
             catch (IllegalAccessException | InvocationTargetException | InstantiationException ex) {
                 ex.printStackTrace();
@@ -179,9 +202,12 @@ public class TitleUtil {
      *             between fades (default 60)
      * @param fadeOut the time in ticks the title should fade out over (default
      *                20)
+     *
+     * @deprecated This will not work properly on newer Minecraft versions.
      */
+    @Deprecated
     public static void sendTimes(Player player, int fadeIn, int stay, int fadeOut) {
-        if (TITLE_SUPPORT) {
+        if (TITLE_SUPPORT && !USING_BUKKIT_API) {
             try {
                 Object packet = packetPlayOutTitle_init_III.newInstance(fadeIn, stay, fadeOut);
                 Object vanillaPlayer = craftPlayer_getHandle.invoke(player);
@@ -227,9 +253,23 @@ public class TitleUtil {
                                  String title, ChatColor titleColor,
                                  String subtitle, ChatColor subColor,
                                  int fadeIn, int stay, int fadeOut) {
-        sendTimes(player, fadeIn, stay, fadeOut);
-        sendSubtitle(player, subtitle, subColor);
-        sendTitle(player, title, titleColor);
+        if (USING_BUKKIT_API) {
+            String titleJson = title != null ? titleColor + title : null;
+            String subtitleJson = subtitle != null ? subColor + subtitle : null;
+            try {
+                player_sendTitle_5.invoke(player, titleJson, subtitleJson, fadeIn, stay, fadeOut);
+            } catch (IllegalAccessException | InvocationTargetException ex) {
+                ex.printStackTrace();
+            }
+        } else {
+            sendTimes(player, fadeIn, stay, fadeOut);
+            if (subtitle != null) {
+                sendSubtitle(player, subtitle, subColor);
+            }
+            if (title != null) {
+                sendTitle(player, title, titleColor);
+            }
+        }
     }
 
     /**
@@ -247,8 +287,7 @@ public class TitleUtil {
     public static void sendTitle(Player player,
                                  String title, ChatColor titleColor,
                                  int fadeIn, int stay, int fadeOut) {
-        sendTimes(player, fadeIn, stay, fadeOut);
-        sendTitle(player, title, titleColor);
+        sendTitle(player, title, titleColor, null, ChatColor.RESET, fadeIn, stay, fadeOut);
     }
 
     /**
