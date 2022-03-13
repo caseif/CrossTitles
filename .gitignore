@@ -1,6 +1,7 @@
 .git/
 .gradle/
 .idea/
+.vscode/
 bin/
 build/
 doc/
