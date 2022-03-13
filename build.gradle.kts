@@ -13,7 +13,7 @@ defaultTasks("clean", "licenseFormat", "build")
 
 // Project information
 group = "net.caseif.crosstitles"
-version = "0.1.3-SNAPSHOT"
+version = "0.1.3"
 description = "A Minecraft version-independent title API for Bukkit 1.8+."
 
 java {
